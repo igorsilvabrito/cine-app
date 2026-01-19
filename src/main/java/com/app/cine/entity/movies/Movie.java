@@ -24,7 +24,7 @@ public class Movie {
 
     private Integer durationMinutes;
 
-    private String rating; // Livre, 12, 14, 16, 18
+    private String rating;
 
     private Boolean active = true;
 }

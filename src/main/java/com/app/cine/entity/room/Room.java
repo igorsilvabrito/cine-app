@@ -18,7 +18,7 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name; // Sala 1, Sala VIP
+    private String name;
 
     @Column(name = "total_rows")
     private Integer totalRows;
