@@ -13,9 +13,11 @@ import java.util.List;
 public class SessionSeatService {
 
     private final SessionSeatRepository sessionSeatRepository;
+    private final SeatHoldService seatHoldService;
 
-    public SessionSeatService(SessionSeatRepository sessionSeatRepository) {
+    public SessionSeatService(SessionSeatRepository sessionSeatRepository, SeatHoldService seatHoldService) {
         this.sessionSeatRepository = sessionSeatRepository;
+        this.seatHoldService = seatHoldService;
     }
 
     public List<SessionSeatResponse> listBySession(Long sessionId) {
@@ -25,19 +27,26 @@ public class SessionSeatService {
                 .toList();
     }
 
-    @Transactional
-    public void reserve(Long sessionId, Long seatId) {
+    public void reserve(Long sessionId, Long seatId, Long userId) {
 
-        SessionSeat sessionSeat = sessionSeatRepository
+        SessionSeat seat = sessionSeatRepository
                 .findBySessionIdAndSeatId(sessionId, seatId)
-                .orElseThrow(() -> new RuntimeException("Cadeira não encontrada para esta sessão"));
+                .orElseThrow(() -> new RuntimeException("Cadeira não encontrada"));
 
-        if (sessionSeat.getStatus() != SeatStatus.AVAILABLE) {
-            throw new RuntimeException("Cadeira indisponível");
+        if (seatHoldService.isHeld(sessionId, seatId)) {
+            throw new RuntimeException("Cadeira em processo de reserva");
         }
 
-        sessionSeat.setStatus(SeatStatus.RESERVED);
+        boolean held = seatHoldService.holdSeat(sessionId, seatId, userId);
+
+        if (!held) {
+            throw new RuntimeException("Cadeira já reservada");
+        }
+
+        seat.setStatus(SeatStatus.HELD);
+        sessionSeatRepository.save(seat);
     }
+
 
     private SessionSeatResponse toResponse(SessionSeat ss) {
         return new SessionSeatResponse(
