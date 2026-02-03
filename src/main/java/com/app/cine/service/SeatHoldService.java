@@ -36,6 +36,11 @@ public class SeatHoldService {
         );
     }
 
+    public String getHolder(Long sessionId, Long seatId) {
+        return redisTemplate.opsForValue()
+                .get(buildKey(sessionId, seatId));
+    }
+
     private String buildKey(Long sessionId, Long seatId) {
         return "seat:" + sessionId + ":" + seatId;
     }

@@ -27,19 +27,42 @@ public class SecurityFilter extends OncePerRequestFilter {
     private UserRepository userRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String token = recoverToken(request);
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
-        if(token != null){
-            String email = tokenService.validateToken(token);
-            User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new RuntimeException("Este email já está sendo usado!"));
-            Authentication authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        String uri = request.getRequestURI();
+
+        if (uri.startsWith("/auth/login") || uri.startsWith("/auth/register")) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
+        String token = recoverToken(request);
+
+        if (token == null) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        String email = tokenService.validateToken(token);
+
+        User user = userRepository
+                .findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(
+                        user,
+                        null,
+                        user.getAuthorities()
+                );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         filterChain.doFilter(request, response);
-
-
     }
     public String recoverToken(HttpServletRequest request){
         var authorizationHeader = request.getHeader("Authorization");

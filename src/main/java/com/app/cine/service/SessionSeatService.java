@@ -3,8 +3,11 @@ package com.app.cine.service;
 import com.app.cine.dto.session_seats.SessionSeatResponse;
 import com.app.cine.entity.session.SeatStatus;
 import com.app.cine.entity.session.SessionSeat;
+import com.app.cine.entity.user.User;
 import com.app.cine.repository.SessionSeatRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,7 +18,10 @@ public class SessionSeatService {
     private final SessionSeatRepository sessionSeatRepository;
     private final SeatHoldService seatHoldService;
 
-    public SessionSeatService(SessionSeatRepository sessionSeatRepository, SeatHoldService seatHoldService) {
+    public SessionSeatService(
+            SessionSeatRepository sessionSeatRepository,
+            SeatHoldService seatHoldService
+    ) {
         this.sessionSeatRepository = sessionSeatRepository;
         this.seatHoldService = seatHoldService;
     }
@@ -27,25 +33,40 @@ public class SessionSeatService {
                 .toList();
     }
 
-    public void reserve(Long sessionId, Long seatId, Long userId) {
+    @Transactional
+    public void reserve(Long sessionId, Long seatId) {
 
-        SessionSeat seat = sessionSeatRepository
+        Authentication auth =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        User user = (User) auth.getPrincipal();
+        Long userId = user.getId();
+
+        if (!seatHoldService.isHeld(sessionId, seatId)) {
+            throw new RuntimeException("Assento não está em hold");
+        }
+
+        String holder = seatHoldService.getHolder(sessionId, seatId);
+
+        if (!holder.equals(userId.toString())) {
+            throw new RuntimeException("Assento está segurado por outro usuário");
+        }
+
+        SessionSeat sessionSeat = sessionSeatRepository
                 .findBySessionIdAndSeatId(sessionId, seatId)
-                .orElseThrow(() -> new RuntimeException("Cadeira não encontrada"));
+                .orElseThrow(() ->
+                        new RuntimeException("Cadeira não encontrada")
+                );
 
-        if (seatHoldService.isHeld(sessionId, seatId)) {
-            throw new RuntimeException("Cadeira em processo de reserva");
+        if (sessionSeat.getStatus() != SeatStatus.AVAILABLE) {
+            throw new RuntimeException("Cadeira indisponível");
         }
 
-        boolean held = seatHoldService.holdSeat(sessionId, seatId, userId);
+        sessionSeat.setStatus(SeatStatus.RESERVED);
 
-        if (!held) {
-            throw new RuntimeException("Cadeira já reservada");
-        }
-
-        seat.setStatus(SeatStatus.HELD);
-        sessionSeatRepository.save(seat);
+        seatHoldService.releaseSeat(sessionId, seatId);
     }
+
 
 
     private SessionSeatResponse toResponse(SessionSeat ss) {
