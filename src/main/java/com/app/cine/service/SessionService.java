@@ -83,6 +83,7 @@ public class SessionService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+
     }
 
     private SessionResponse toResponse(Session session) {
@@ -92,6 +93,7 @@ public class SessionService {
                 session.getRoom().getName(),
                 session.getStartTime(),
                 session.getPrice()
+
         );
     }
 }

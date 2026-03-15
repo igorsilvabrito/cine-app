@@ -64,9 +64,7 @@ public class SessionSeatService {
 
         sessionSeat.setStatus(SeatStatus.RESERVED);
 
-        seatHoldService.releaseSeat(sessionId, seatId);
     }
-
 
 
     private SessionSeatResponse toResponse(SessionSeat ss) {

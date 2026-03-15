@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/sessions/{sessionId}/seats/{seatId}")
+@RequestMapping("/sessions/{sessionId}/seats/{seatId}/tickets")
 public class TicketController {
 
     private final TicketService ticketService;
@@ -20,7 +20,7 @@ public class TicketController {
         this.ticketService = ticketService;
     }
 
-    @PostMapping("/purchase")
+    @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> purchase(
             @PathVariable Long sessionId,

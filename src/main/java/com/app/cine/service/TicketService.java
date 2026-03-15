@@ -27,7 +27,6 @@ public class TicketService {
         this.sessionSeatRepository = sessionSeatRepository;
         this.seatHoldService = seatHoldService;
     }
-
     @Transactional
     public void purchase(Long sessionId, Long seatId, User user) {
 
@@ -48,8 +47,6 @@ public class TicketService {
         if (sessionSeat.getStatus() != SeatStatus.RESERVED) {
             throw new RuntimeException("Assento não está reservado");
         }
-
-        sessionSeat.setStatus(SeatStatus.RESERVED);
 
         Ticket ticket = new Ticket();
         ticket.setUser(user);

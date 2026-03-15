@@ -63,4 +63,6 @@ public class SessionSeatController {
 
         return ResponseEntity.noContent().build();
     }
+
+
 }
